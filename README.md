@@ -1,33 +1,39 @@
 # zyte-fetch-skill
 
-[Zyte API](https://www.zyte.com/) を利用してWebページを取得する [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 用カスタムスキルです。
+A custom skill for [OpenClaw](https://docs.openclaw.ai/) that fetches web pages via the [Zyte API](https://www.zyte.com/) with browser rendering (client-side JavaScript execution).
 
-Claude Code の標準の `web_fetch` ではJavaScriptで動的にレンダリングされるサイトの内容を取得できない場合があります。このスキルは Zyte API のブラウザレンダリング機能を通じてページを取得するため、SPA や JS 依存のサイトでも正しくコンテンツを取得できます。
+The built-in `web_fetch` often returns empty or incomplete content from JavaScript-heavy sites. This skill uses Zyte API's browser rendering to retrieve fully rendered pages, making it work reliably with SPAs, JS-dependent sites, and pages behind anti-bot protection.
 
-## 特徴
+## Features
 
-- **ブラウザレンダリング** — JavaScript を実行した状態の HTML を取得
-- **アンチボット対策のバイパス** — Zyte のプロキシローテーションとフィンガープリント処理
-- **スクリーンショット取得** — レンダリング済みページの PNG スクリーンショット
-- **HTTP モード** — 静的ページ向けの高速な生 HTTP レスポンス取得
+- **Browser rendering** — Retrieve HTML after JavaScript execution
+- **Anti-bot bypass** — Zyte handles proxy rotation and fingerprinting
+- **Screenshots** — Capture rendered pages as PNG
+- **HTTP mode** — Fast raw HTTP responses for static pages
 
-## 前提条件
+## Prerequisites
 
-- [Zyte API](https://www.zyte.com/) のアカウントと API キー
-- `curl` と `jq` がインストールされていること
-- `base64` コマンド（macOS / Linux 標準搭載）
+- A [Zyte API](https://www.zyte.com/) account and API key
+- `curl` and `jq` installed
+- `base64` command (included by default on macOS / Linux)
 
-## インストール
+## Installation
 
-### 1. リポジトリのクローン
+### 1. Clone the repository
 
-スキルの配置先は任意ですが、ここでは `~/.claude/skills/` 以下を例にします。
+Clone into the OpenClaw managed skills directory:
 
 ```bash
-git clone https://github.com/jacopen/zyte-fetch-skill.git ~/.claude/skills/zyte-fetch-skill
+git clone https://github.com/jacopen/zyte-fetch-skill.git ~/.openclaw/skills/zyte-fetch-skill
 ```
 
-### 2. Zyte API キーの設定
+Or into a workspace-level skills directory for per-project use:
+
+```bash
+git clone https://github.com/jacopen/zyte-fetch-skill.git ./skills/zyte-fetch-skill
+```
+
+### 2. Set up the Zyte API key
 
 ```bash
 mkdir -p ~/.config/zyte
@@ -35,91 +41,97 @@ echo "YOUR_ZYTE_API_KEY" > ~/.config/zyte/api_key
 chmod 600 ~/.config/zyte/api_key
 ```
 
-環境変数 `ZYTE_API_KEY_FILE` でキーファイルのパスを変更することもできます。
+You can override the key file path with the `ZYTE_API_KEY_FILE` environment variable:
 
 ```bash
 export ZYTE_API_KEY_FILE=/path/to/your/api_key
 ```
 
-### 3. Claude Code にスキルを登録
+### 3. Enable the skill in OpenClaw
 
-プロジェクトの `.claude/settings.json` またはユーザー設定 `~/.claude/settings.json` に以下を追加します。
+Add the following to your `openclaw.json`:
 
 ```json
 {
-  "skills": [
-    "~/.claude/skills/zyte-fetch-skill/SKILL.md"
-  ]
+  "skills": {
+    "entries": {
+      "zyte-fetch": {
+        "enabled": true
+      }
+    }
+  }
 }
 ```
 
-## 使い方
+Changes take effect on the next new session.
 
-### Claude Code 上での利用
+## Usage
 
-スキルを登録すると、Claude Code が Web ページの取得時に自動的にこのスキルを選択肢として認識します。以下のようなケースで有効です。
+### Within OpenClaw
 
-- `web_fetch` で空や不完全なコンテンツが返ってきた場合
-- JavaScript レンダリングが必要なサイトの取得
-- アンチボット保護があるサイトへのアクセス
-- ページのスクリーンショットが必要な場合
+Once installed, OpenClaw will automatically recognize the skill and use it when fetching web pages. It is especially useful when:
 
-### スクリプト単体での利用
+- `web_fetch` returns empty or incomplete content
+- The target site requires JavaScript rendering
+- The site has anti-bot protection
+- You need a screenshot of a rendered page
 
-`scripts/zyte_fetch.sh` は単体でも利用できます。
+### Standalone script
 
-#### ブラウザレンダリング（デフォルト）
+`scripts/zyte_fetch.sh` can also be used independently.
 
-JS を実行した状態の HTML を取得します。
+#### Browser-rendered HTML (default)
+
+Fetches the page with JavaScript executed:
 
 ```bash
 scripts/zyte_fetch.sh "https://example.com"
 ```
 
-#### HTTP モード
+#### HTTP mode
 
-JS 不要の静的ページを高速に取得します。
+Faster fetch for static pages (no JS execution):
 
 ```bash
 scripts/zyte_fetch.sh "https://example.com" --http
 ```
 
-#### スクリーンショット
+#### Screenshot
 
-レンダリング済みページの HTML とスクリーンショット（PNG）を保存します。
+Saves both the rendered HTML and a PNG screenshot:
 
 ```bash
 scripts/zyte_fetch.sh "https://example.com" --screenshot --output page.html
-# page.html と page.png が出力されます
+# Outputs page.html and page.png
 ```
 
-#### Raw JSON レスポンス
+#### Raw JSON response
 
-Zyte API のレスポンスをそのまま JSON で出力します。
+Outputs the raw Zyte API JSON response:
 
 ```bash
 scripts/zyte_fetch.sh "https://example.com" --raw-json
 ```
 
-### オプション一覧
+### Options
 
-| オプション | 説明 |
+| Option | Description |
 |---|---|
-| `--http` | ブラウザレンダリングの代わりに HTTP モードを使用（高速・JS なし） |
-| `--screenshot` | スクリーンショットを PNG で保存 |
-| `--output FILE` | 結果を stdout ではなくファイルに出力 |
-| `--raw-json` | Zyte API の生 JSON レスポンスを出力 |
+| `--http` | Use HTTP mode instead of browser rendering (faster, no JS) |
+| `--screenshot` | Save a PNG screenshot of the rendered page |
+| `--output FILE` | Write output to a file instead of stdout |
+| `--raw-json` | Output the raw Zyte API JSON response |
 
-## web_fetch との使い分け
+## When to use this vs. web_fetch
 
-| 状況 | 推奨ツール |
+| Scenario | Recommended tool |
 |---|---|
-| 静的な HTML ページ | `web_fetch`（無料・高速） |
-| JS レンダリングが必要なサイト | `zyte_fetch`（ブラウザモード） |
-| `web_fetch` で空/不完全な結果 | `zyte_fetch`（ブラウザモード） |
-| アンチボット保護があるサイト | `zyte_fetch` |
-| スクリーンショットが必要 | `zyte_fetch --screenshot` |
+| Static HTML page | `web_fetch` (free, faster) |
+| JS-rendered site | `zyte_fetch` (browser mode) |
+| `web_fetch` returns empty/broken content | `zyte_fetch` (browser mode) |
+| Site with anti-bot protection | `zyte_fetch` |
+| Need a screenshot | `zyte_fetch --screenshot` |
 
-## ライセンス
+## License
 
 [MIT License](LICENSE)
