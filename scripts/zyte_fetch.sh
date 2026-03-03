@@ -3,10 +3,15 @@
 # Usage: zyte_fetch.sh <url> [--http] [--screenshot] [--output FILE]
 #
 # Options:
-#   --http        Use HTTP mode instead of browser rendering
-#   --screenshot  Return a screenshot (base64 PNG)
-#   --output FILE Write output to FILE instead of stdout
-#   --raw-json    Output raw JSON response
+#   --http         Use HTTP mode instead of browser rendering
+#   --screenshot   Return a screenshot (base64 PNG)
+#   --output FILE  Write output to FILE instead of stdout
+#   --raw-json     Output raw JSON response
+#   --article      Extract structured article data
+#   --product      Extract structured product data
+#   --job-posting  Extract structured job posting data
+#   --serp         Extract structured search engine results page data
+#   --page-content Extract cleaned page content (noise-free body text)
 
 set -euo pipefail
 
@@ -18,6 +23,7 @@ MODE="browser"
 SCREENSHOT=false
 OUTPUT=""
 RAW_JSON=false
+STRUCTURED_TYPE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -25,15 +31,22 @@ while [[ $# -gt 0 ]]; do
     --screenshot) SCREENSHOT=true; shift ;;
     --output) OUTPUT="$2"; shift 2 ;;
     --raw-json) RAW_JSON=true; shift ;;
+    --article) STRUCTURED_TYPE="article"; shift ;;
+    --product) STRUCTURED_TYPE="product"; shift ;;
+    --job-posting) STRUCTURED_TYPE="jobPosting"; shift ;;
+    --serp) STRUCTURED_TYPE="serp"; shift ;;
+    --page-content) STRUCTURED_TYPE="pageContent"; shift ;;
     -*) echo "Unknown option: $1" >&2; exit 1 ;;
     *) URL="$1"; shift ;;
   esac
 done
 
-[[ -z "$URL" ]] && { echo "Usage: zyte_fetch.sh <url> [--http] [--screenshot] [--output FILE]" >&2; exit 1; }
+[[ -z "$URL" ]] && { echo "Usage: zyte_fetch.sh <url> [--http] [--screenshot] [--output FILE] [--article|--product|--job-posting|--serp|--page-content]" >&2; exit 1; }
 
 # Build JSON payload
-if [[ "$MODE" == "browser" ]]; then
+if [[ -n "$STRUCTURED_TYPE" ]]; then
+  PAYLOAD=$(jq -n --arg url "$URL" --arg type "$STRUCTURED_TYPE" '{("url"): $url, ($type): true}')
+elif [[ "$MODE" == "browser" ]]; then
   if [[ "$SCREENSHOT" == true ]]; then
     PAYLOAD=$(jq -n --arg url "$URL" '{"url": $url, "browserHtml": true, "screenshot": true}')
   else
@@ -58,6 +71,8 @@ fi
 
 if [[ "$RAW_JSON" == true ]]; then
   RESULT="$RESPONSE"
+elif [[ -n "$STRUCTURED_TYPE" ]]; then
+  RESULT=$(echo "$RESPONSE" | jq -r --arg type "$STRUCTURED_TYPE" '.[$type]')
 elif [[ "$MODE" == "browser" ]]; then
   RESULT=$(echo "$RESPONSE" | jq -r '.browserHtml')
 else
