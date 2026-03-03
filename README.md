@@ -10,6 +10,7 @@ The built-in `web_fetch` often returns empty or incomplete content from JavaScri
 - **Anti-bot bypass** — Zyte handles proxy rotation and fingerprinting
 - **Screenshots** — Capture rendered pages as PNG
 - **HTTP mode** — Fast raw HTTP responses for static pages
+- **Structured extraction** — Extract structured data (article, product, job posting, SERP, page content)
 
 ## Prerequisites
 
@@ -113,6 +114,27 @@ Outputs the raw Zyte API JSON response:
 scripts/zyte_fetch.sh "https://example.com" --raw-json
 ```
 
+#### Structured extraction
+
+Extracts structured data from the page. Only one type can be used per request.
+
+```bash
+# Article (e.g. news, Wikipedia)
+scripts/zyte_fetch.sh "https://en.wikipedia.org/wiki/Lobster" --article
+
+# Product (e-commerce pages)
+scripts/zyte_fetch.sh "https://example.com/product/123" --product
+
+# Job posting
+scripts/zyte_fetch.sh "https://example.com/jobs/456" --job-posting
+
+# Search engine results page
+scripts/zyte_fetch.sh "https://www.google.com/search?q=example" --serp
+
+# Cleaned page content (noise-free body text)
+scripts/zyte_fetch.sh "https://example.com" --page-content
+```
+
 ### Options
 
 | Option | Description |
@@ -121,6 +143,11 @@ scripts/zyte_fetch.sh "https://example.com" --raw-json
 | `--screenshot` | Save a PNG screenshot of the rendered page |
 | `--output FILE` | Write output to a file instead of stdout |
 | `--raw-json` | Output the raw Zyte API JSON response |
+| `--article` | Extract structured article data |
+| `--product` | Extract structured product data |
+| `--job-posting` | Extract structured job posting data |
+| `--serp` | Extract structured search engine results page data |
+| `--page-content` | Extract cleaned page content (noise-free body text) |
 
 ## When to use this vs. web_fetch
 
@@ -131,6 +158,11 @@ scripts/zyte_fetch.sh "https://example.com" --raw-json
 | `web_fetch` returns empty/broken content | `zyte_fetch` (browser mode) |
 | Site with anti-bot protection | `zyte_fetch` |
 | Need a screenshot | `zyte_fetch --screenshot` |
+| Need structured article data | `zyte_fetch --article` |
+| Need structured product data | `zyte_fetch --product` |
+| Need structured job posting data | `zyte_fetch --job-posting` |
+| Need SERP data | `zyte_fetch --serp` |
+| Need clean body text | `zyte_fetch --page-content` |
 
 ## License
 
