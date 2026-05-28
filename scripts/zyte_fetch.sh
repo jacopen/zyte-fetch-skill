@@ -15,8 +15,12 @@
 
 set -euo pipefail
 
-API_KEY_FILE="${ZYTE_API_KEY_FILE:-$HOME/.config/zyte/api_key}"
-API_KEY="$(cat "$API_KEY_FILE" 2>/dev/null)" || { echo "Error: API key not found at $API_KEY_FILE" >&2; exit 1; }
+if [[ -n "${ZYTE_API_KEY:-}" ]]; then
+  API_KEY="$ZYTE_API_KEY"
+else
+  API_KEY_FILE="${ZYTE_API_KEY_FILE:-$HOME/.config/zyte/api_key}"
+  API_KEY="$(cat "$API_KEY_FILE" 2>/dev/null)" || { echo "Error: API key not found. Set ZYTE_API_KEY env var or create $API_KEY_FILE" >&2; exit 1; }
+fi
 
 URL=""
 MODE="browser"
