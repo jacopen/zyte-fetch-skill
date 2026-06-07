@@ -9,7 +9,7 @@ Fetch web pages through Zyte API. Supports browser-rendered HTML (JavaScript exe
 
 ## API Key
 
-Stored at `~/.config/zyte/api_key`. Override with `ZYTE_API_KEY_FILE` env var.
+Resolved in order: `ZYTE_API_KEY` env var → file at `ZYTE_API_KEY_FILE` → `~/.config/zyte/api_key`.
 
 ## Quick Start
 
@@ -71,7 +71,7 @@ scripts/zyte_fetch.sh "https://example.com" --page-content
 ## Direct curl (advanced)
 
 ```bash
-API_KEY=$(cat ~/.config/zyte/api_key)
+API_KEY="${ZYTE_API_KEY:-$(cat ~/.config/zyte/api_key)}"
 curl -s --compressed --user "${API_KEY}:" \
   -H 'Content-Type: application/json' \
   -d '{"url":"https://example.com","browserHtml":true}' \
@@ -81,7 +81,7 @@ curl -s --compressed --user "${API_KEY}:" \
 Structured extraction example:
 
 ```bash
-API_KEY=$(cat ~/.config/zyte/api_key)
+API_KEY="${ZYTE_API_KEY:-$(cat ~/.config/zyte/api_key)}"
 curl -s --compressed --user "${API_KEY}:" \
   -H 'Content-Type: application/json' \
   -d '{"url":"https://en.wikipedia.org/wiki/Lobster","article":true}' \

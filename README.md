@@ -36,6 +36,20 @@ git clone https://github.com/jacopen/zyte-fetch-skill.git ./skills/zyte-fetch-sk
 
 ### 2. Set up the Zyte API key
 
+The API key is resolved in the following order:
+
+1. `ZYTE_API_KEY` environment variable
+2. File at the path in `ZYTE_API_KEY_FILE` (if set)
+3. `~/.config/zyte/api_key`
+
+#### Option A: Environment variable
+
+```bash
+export ZYTE_API_KEY=YOUR_ZYTE_API_KEY
+```
+
+#### Option B: Key file
+
 ```bash
 mkdir -p ~/.config/zyte
 echo "YOUR_ZYTE_API_KEY" > ~/.config/zyte/api_key
